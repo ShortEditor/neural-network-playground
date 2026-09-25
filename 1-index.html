@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neural Network Playground - interactive deep learning simulator</title>
+<meta name="description" content="Build, train and visualize a neural network live in your browser. Change layers, neurons, activations and learning rate, and watch the decision boundary, weights and loss update in real time.">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <span class="logo">🧠</span>
+    <div>
+      <h1>Neural Network Playground</h1>
+      <p class="tagline">Build a network, press play, and watch it learn - everything runs live in your browser.</p>
+    </div>
+  </div>
+  <a class="gh" href="https://github.com/ShortEditor/neural-network-playground" target="_blank" rel="noopener">View on GitHub ↗</a>
+</header>
+
+<main>
+  <!-- LEFT: data + training controls -->
+  <section class="panel data-panel">
+    <div class="panel-title">
+      <h2>Data</h2>
+      <div class="transport">
+        <button id="btn-play" class="primary" title="Train / pause">▶ Train</button>
+        <button id="btn-step" title="Train one epoch">⏭ Step</button>
+        <button id="btn-reset" title="Reset weights">↺ Reset</button>
+      </div>
+    </div>
+
+    <div class="dataset-row" id="dataset-row">
+      <button class="ds active" data-ds="circle" title="One class inside a circle">◉ Circle</button>
+      <button class="ds" data-ds="xor" title="Quadrants (XOR)">✖ XOR</button>
+      <button class="ds" data-ds="moons" title="Two interleaving moons">☾ Moons</button>
+      <button class="ds" data-ds="spiral" title="Two spirals (hard)">🌀 Spiral</button>
+      <button class="ds" data-ds="gauss" title="Two gaussian blobs">⁍ Blobs</button>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="data-canvas" width="360" height="360"></canvas>
+      <div class="legend">
+        <span><i class="dot orange"></i> class 1</span>
+        <span><i class="dot blue"></i> class 0</span>
+        <span class="hollow-note">hollow = test data</span>
+      </div>
+    </div>
+
+    <div class="sliders">
+      <label>Noise <input type="range" id="noise" min="0" max="50" value="10"><span id="noise-v">10</span></label>
+      <label>Train / test split <input type="range" id="split" min="10" max="90" value="50"><span id="split-v">50%</span></label>
+      <label>Batch size <input type="range" id="batch" min="1" max="32" value="10"><span id="batch-v">10</span></label>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><span class="k">Epoch</span><span class="v" id="epoch">0</span></div>
+      <div class="stat"><span class="k">Train loss</span><span class="v" id="train-loss">–</span></div>
+      <div class="stat"><span class="k">Test loss</span><span class="v" id="test-loss">–</span></div>
+    </div>
+    <canvas id="loss-canvas" width="360" height="90"></canvas>
+  </section>
+
+  <!-- MIDDLE: network -->
+  <section class="panel net-panel">
+    <div class="panel-title">
+      <h2>Network <span class="hint">hover a neuron, click + / − to reshape it</span></h2>
+      <button id="btn-add-layer" class="small">+ Add hidden layer</button>
+    </div>
+    <div id="net-scroll"><canvas id="net-canvas" width="640" height="430"></canvas></div>
+    <div id="neuron-tip" class="tip hidden"></div>
+  </section>
+
+  <!-- RIGHT: hyperparameters -->
+  <section class="panel ctrl-panel">
+    <h2>Inputs</h2>
+    <p class="hint">Which features feed the network:</p>
+    <div class="features" id="features">
+      <button class="feat active" data-f="x1">X₁</button>
+      <button class="feat active" data-f="x2">X₂</button>
+      <button class="feat" data-f="x1sq">X₁²</button>
+      <button class="feat" data-f="x2sq">X₂²</button>
+      <button class="feat" data-f="x1x2">X₁·X₂</button>
+      <button class="feat" data-f="sin1">sin(X₁)</button>
+      <button class="feat" data-f="sin2">sin(X₂)</button>
+    </div>
+
+    <h2>Hyperparameters</h2>
+    <div class="ctrl">
+      <label for="activation">Activation</label>
+      <select id="activation">
+        <option value="tanh" selected>Tanh</option>
+        <option value="relu">ReLU</option>
+        <option value="leakyrelu">Leaky ReLU</option>
+        <option value="sigmoid">Sigmoid</option>
+      </select>
+    </div>
+    <div class="ctrl">
+      <label for="lr">Learning rate <span id="lr-v">0.03</span></label>
+      <input type="range" id="lr" min="0" max="100" value="55">
+    </div>
+    <div class="ctrl">
+      <label for="reg">Regularization</label>
+      <select id="reg">
+        <option value="none" selected>None</option>
+        <option value="l1">L1</option>
+        <option value="l2">L2</option>
+      </select>
+    </div>
+    <div class="ctrl">
+      <label for="reg-rate">Reg. rate <span id="reg-v">0.001</span></label>
+      <input type="range" id="reg-rate" min="0" max="100" value="40">
+    </div>
+
+    <h2>About</h2>
+    <p class="about">
+      A real multilayer perceptron trained with backpropagation and mini-batch gradient descent,
+      written in plain JavaScript - no libraries, no server.
+      The background shows the network's decision boundary, the lines are live weights
+      (thickness = magnitude, orange = positive, blue = negative) and each neuron's fill
+      is its current activation.
+    </p>
+  </section>
+</main>
+
+<footer>
+  Built by <a href="https://github.com/ShortEditor" target="_blank" rel="noopener">Ganesh (ShortEditor)</a> · vanilla JS, zero dependencies
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
